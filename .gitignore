@@ -24,3 +24,5 @@ Makefile
 *.gcda
 *.gcno
 *.gcov
+
+test_files/
