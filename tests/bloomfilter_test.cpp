@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_all.hpp>
-#include "../src/BloomFilter.h"
+#include "bloomfilter.h"
 #include <string>
 #include <vector>
 #include <iostream>

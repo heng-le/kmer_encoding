@@ -1,6 +1,7 @@
 ﻿# 1) Add a library from the .cpp files that do not contain main()
 add_library(CapstoneLibrary STATIC
     bloomfilter.cpp
+    basicEncoding.cpp
 )
 
 target_link_libraries(CapstoneLibrary
@@ -23,3 +24,9 @@ target_link_libraries(Capstone_v2
 if(CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Capstone_v2 PROPERTY CXX_STANDARD 20)
 endif()
+
+
+target_include_directories(CapstoneLibrary
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+)

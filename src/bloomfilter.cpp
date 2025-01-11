@@ -1,128 +1,146 @@
 #include "BloomFilter.h"
-#include <cmath>
-#include <stdexcept>
-#include <algorithm>
 #include "../external/MurmurHash3/murmurhash3.h"
+#include <cmath>
+#include <cstring>
+#include <algorithm>
 
-
+// ------------------ Hashing Functions ------------------ //
 uint64_t BloomFilter::combine128to64(const uint8_t hash128[16]) {
-    uint64_t low, high; 
-
+    uint64_t low, high;
     std::memcpy(&low, hash128, 8);
     std::memcpy(&high, hash128 + 8, 8);
-
     return low ^ high;
 }
 
 uint64_t BloomFilter::generateHash(const std::string& item, int i, int seed) const {
     uint8_t hash128[16];
-    // Use the index i to modify the seed for different hash values
     uint32_t modifiedSeed = seed + i;
-    MurmurHash3_x64_128(item.c_str(), static_cast<int>(item.length()), modifiedSeed, hash128);
-    uint64_t hashValue = combine128to64(hash128);
+    MurmurHash3_x64_128(item.c_str(), (int)item.size(), modifiedSeed, hash128);
 
+    uint64_t hashValue = combine128to64(hash128);
     return hashValue % bitArraySize;
 }
 
-BloomFilter::BloomFilter(size_t elementsToEncode, double falsePositiveRate)
-    : bitArraySize(calculateBitArraySize(elementsToEncode, falsePositiveRate)),
-    numHashCount(calculateOptimalHashNum(elementsToEncode, bitArraySize)) {
-    bitArray.resize(bitArraySize, false);
+// ------------------ Constructor ------------------ //
+BloomFilter::BloomFilter(std::size_t elementsToEncode,
+    double falsePositiveRate,
+    int positionBits)
+    : positionBits(positionBits)
+
+   
+{
+    // calculate optimal size of bloom filter
+    bitArraySize = static_cast<std::size_t>(std::ceil(
+        -(elementsToEncode * std::log(falsePositiveRate)) / (std::log(2) * std::log(2))
+    ));
+
+    // resizing presence bitset according to calculations
+    presenceBitset.resize(bitArraySize, false);
+
+    // calculate optimal number of hash functions
+    numHashCount = std::max(1, static_cast<int>(std::round(
+        (bitArraySize / static_cast<double>(elementsToEncode)) * std::log(2)
+    )));
+
+    // calculate how many coupled bit arrays needed for position encoding
+    chunkCount = (positionBits + numHashCount - 1) / numHashCount;
+
+    positionBitsets.resize(chunkCount);
+    for (size_t b = 0; b < chunkCount; b++) {
+        positionBitsets[b].resize(bitArraySize, false);
+    }
 }
 
-void BloomFilter::add(const std::string& item, int seed) {
+// ------------------ Presence Bloom Filter  ------------------ //
+void BloomFilter::addPresence(const std::string& item, int seed) {
     for (int i = 0; i < numHashCount; i++) {
-        uint64_t hashIndex = generateHash(item, i, seed);
-        bitArray[hashIndex] = true;
+        uint64_t index = generateHash(item, i, seed);
+        presenceBitset[index] = true;
     }
 }
 
 bool BloomFilter::mightContain(const std::string& item, int seed) const {
     for (int i = 0; i < numHashCount; i++) {
-        if (!bitArray[generateHash(item, i, seed)]) {
+        uint64_t index = generateHash(item, i, seed);
+        if (!presenceBitset[index]) {
             return false;
         }
     }
     return true;
 }
 
-std::vector<uint64_t> BloomFilter::getHashIndexes(const std::string& item, int seed) const {
-    std::vector<uint64_t> hashIndexes;
-    hashIndexes.reserve(numHashCount);
-
+// ------------------ Position Bloom Filters ------------------ //
+void BloomFilter::addPosition(const std::string& item, uint64_t position, int seed) {
     for (int i = 0; i < numHashCount; i++) {
-        hashIndexes.push_back(generateHash(item, i, seed));
+        uint64_t index = generateHash(item, i, seed);
     }
-    return hashIndexes;
+    // Better approach: compute once outside the loop:
+    std::vector<bool> bits = encodePosition(position);
+
+    // 4) We chunk bits across 'chunkCount' bitsets.
+    //    For each chunk b, for each hash i:
+    //    overall position bit = b * numHashCount + i
+    //    if that bit is 1, set positionBitsets[b][ hashIndexes[i] ]
+    //    (We'll do an example approach below.)
+
+    // Let's compute all hash indexes once:
+    std::vector<uint64_t> hashIndexes(numHashCount);
+    for (int i = 0; i < numHashCount; i++) {
+        hashIndexes[i] = generateHash(item, i, seed);
+    }
+
+    // Now set bits:
+    for (size_t b = 0; b < chunkCount; b++) {
+        for (int i = 0; i < numHashCount; i++) {
+            size_t bitIndex = b * numHashCount + i;
+            if (bitIndex >= bits.size()) break;
+
+            if (bits[bitIndex]) {
+                positionBitsets[b][hashIndexes[i]] = true;
+            }
+        }
+    }
 }
 
-void BloomFilter::addPosition(const std::vector<int>& bits, const std::vector<uint64_t>& indexes, int seed) {
-    if (bits.size() != indexes.size()) {
-        throw std::invalid_argument("Bits and indexes must have the same length");
+uint64_t BloomFilter::getPosition(const std::string& item, int seed) const {
+    if (!mightContain(item, seed)) {
+        return 0ULL;  
     }
 
+    std::vector<uint64_t> hashIndexes(numHashCount);
+    for (int i = 0; i < numHashCount; i++) {
+        hashIndexes[i] = generateHash(item, i, seed);
+    }
+
+    std::vector<bool> bits(positionBits, false);
+
+    for (size_t b = 0; b < chunkCount; b++) {
+        for (int i = 0; i < numHashCount; i++) {
+            size_t bitIndex = b * numHashCount + i;
+            if (bitIndex >= positionBits) break;
+
+            if (positionBitsets[b][hashIndexes[i]]) {
+                bits[bitIndex] = true;
+            }
+        }
+    }
+    uint64_t reconstructed = 0ULL;
     for (size_t i = 0; i < bits.size(); i++) {
-        if (bits[i] != 0) {
-            bitArray[indexes[i]] = true;
-        }
-    }
-}
-
-bool BloomFilter::isSet(uint64_t index) const {
-    return bitArray[index];
-}
-
-std::pair<std::vector<uint64_t>, std::vector<int>> BloomFilter::returnPartialCollisionIndex(
-    const std::vector<uint64_t>& indexes) const {
-    std::vector<uint64_t> indexArray;
-    std::vector<int> iArray;
-
-    for (int i = 0; i < indexes.size(); i++) {
-        if (bitArray[indexes[i]]) {
-            indexArray.push_back(indexes[i]);
-            iArray.push_back(i);
+        if (bits[i]) {
+            reconstructed |= (1ULL << i);
         }
     }
 
-    return { indexArray, iArray };
+    return reconstructed;
 }
 
-uint64_t BloomFilter::returnPosition(const std::string& kmer) const {
-    auto indexes = getHashIndexes(kmer);
-    std::vector<int> bitValues;
-    bitValues.reserve(indexes.size());
+// Helper to convert a position into binary bits with padding
+std::vector<bool> BloomFilter::encodePosition(uint64_t position) const {
+    std::vector<bool> bits(positionBits, false); 
 
-    for (uint64_t index : indexes) {
-        bitValues.push_back(isSet(index) ? 1 : 0);
+    for (size_t i = 0; i < positionBits; i++) {
+        bits[positionBits - i - 1] = (position >> i) & 1ULL;  
     }
 
-    return binarySeqToDecimal(bitValues);
-}
-
-size_t BloomFilter::getSize() const {
-    return bitArraySize;
-}
-
-const std::vector<bool>& BloomFilter::getBitArray() const {
-    return bitArray;
-}
-
-size_t BloomFilter::calculateBitArraySize(size_t elementsToEncode, double falsePositiveRate) {
-    return std::ceil(-(elementsToEncode * std::log(falsePositiveRate)) / (std::log(2) * std::log(2)));
-}
-
-int BloomFilter::calculateOptimalHashNum(size_t elementsToEncode, size_t bitArraySize) {
-    return std::max(1, static_cast<int>(std::round((bitArraySize / elementsToEncode) * std::log(2))));
-}
-
-uint64_t BloomFilter::binarySeqToDecimal(const std::vector<int>& bits) {
-    uint64_t result = 0;
-    size_t n = bits.size();
-
-    for (size_t i = 0; i < n; i++) {
-        if (bits[i] == 1) {
-            result |= (1ULL << (n - i - 1));  
-        }
-    }
-    return result;
+    return bits;
 }
