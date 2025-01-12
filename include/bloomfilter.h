@@ -47,5 +47,6 @@ public:
     static std::size_t calculateBitArraySize(std::size_t elementsToEncode, double falsePositiveRate); 
     static int calculateOptimalHashNum(std::size_t elementsToEncode, std::size_t bitArraySize);  
     static uint64_t binarySeqToDecimal(const std::vector<int>& bits);
+    void add(const std::string& item, uint64_t position, int seed);
 };
 
