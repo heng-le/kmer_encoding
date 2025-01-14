@@ -41,7 +41,7 @@ public:
                     std::cout << "Duplicate found: " << kmer << std::endl;
                 }
                 else {
-                    bloomFilter.add(kmer);
+                    //bloomFilter.add(kmer);
                 }
             }
 

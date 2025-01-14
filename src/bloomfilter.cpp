@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
+#include <iostream>
 
 // ------------------ Hashing Functions ------------------ //
 uint64_t BloomFilter::combine128to64(const uint8_t hash128[16]) {
@@ -71,16 +72,12 @@ bool BloomFilter::mightContain(const std::string& item, int seed) const {
 
 // ------------------ Position Bloom Filters ------------------ //
 void BloomFilter::addPosition(const std::string& item, uint64_t position, int seed) {
-    for (int i = 0; i < numHashCount; i++) {
-        uint64_t index = generateHash(item, i, seed);
-    }
-    
-    std::vector<bool> bits = encodePosition(position);
-
     std::vector<uint64_t> hashIndexes(numHashCount);
     for (int i = 0; i < numHashCount; i++) {
         hashIndexes[i] = generateHash(item, i, seed);
     }
+
+    std::vector<bool> bits = encodePosition(position);
 
     for (size_t b = 0; b < chunkCount; b++) {
         for (int i = 0; i < numHashCount; i++) {
@@ -96,7 +93,7 @@ void BloomFilter::addPosition(const std::string& item, uint64_t position, int se
 
 uint64_t BloomFilter::getPosition(const std::string& item, int seed) const {
     if (!mightContain(item, seed)) {
-        return 0ULL;  
+        return static_cast<uint64_t>(-1);
     }
 
     std::vector<uint64_t> hashIndexes(numHashCount);
@@ -127,42 +124,74 @@ uint64_t BloomFilter::getPosition(const std::string& item, int seed) const {
 }
 
 // ------------------ Combined Encoding ------------------ //
-void BloomFilter::add(const std::string& item, uint64_t position, int seed) {
-    
+bool BloomFilter::add(const std::string& item, uint64_t position, int seed) {
     std::vector<uint64_t> hashIndexes(numHashCount);
     for (int i = 0; i < numHashCount; i++) {
         hashIndexes[i] = generateHash(item, i, seed);
     }
-
-    // 2) Mark presence bits (the normal Bloom filter part)
-    for (uint64_t hIndex : hashIndexes) {
-        presenceBitset[hIndex] = true;
+    if (position >= (1ULL << positionBits)) {
+        return false;
     }
-
-    // 3) Encode the position into bits
-    std::vector<bool> bits = encodePosition(position);
-
-    // 4) Mark position bits across the chunked bitsets
+    std::vector<bool> newBits = encodePosition(position);
+    std::vector<uint64_t> collisionIndexes;
+    std::vector<int> collisionPositions;
+    collisionIndexes.reserve(numHashCount);
+    collisionPositions.reserve(numHashCount);
+    for (int i = 0; i < numHashCount; i++) {
+        uint64_t hIndex = hashIndexes[i];
+        if (presenceBitset[hIndex]) {
+            collisionIndexes.push_back(hIndex);
+            collisionPositions.push_back(i);
+        }
+    }
     for (size_t b = 0; b < chunkCount; b++) {
-        for (int i = 0; i < numHashCount; i++) {
-            size_t bitIndex = b * numHashCount + i;
-            if (bitIndex >= bits.size()) break;  
-
-            if (bits[bitIndex]) {
-                positionBitsets[b][hashIndexes[i]] = true;
+        for (size_t idx = 0; idx < collisionIndexes.size(); idx++) {
+            int hashFuncIndex = collisionPositions[idx];
+            uint64_t hIndex = collisionIndexes[idx];
+            size_t bitIndex = b * numHashCount + hashFuncIndex;
+            if (bitIndex >= newBits.size()) break;
+            bool existingBit = positionBitsets[b][hIndex];
+            bool desiredBit = newBits[bitIndex];
+            if (existingBit != desiredBit) {
+                return false;
             }
         }
     }
+    for (auto hIndex : hashIndexes) {
+        presenceBitset[hIndex] = true;
+    }
+    for (size_t b = 0; b < chunkCount; b++) {
+        for (int i = 0; i < numHashCount; i++) {
+            size_t bitIndex = b * numHashCount + i;
+            if (bitIndex >= newBits.size()) break;
+            positionBitsets[b][hashIndexes[i]] = newBits[bitIndex];
+        }
+    }
+    return true;
 }
 
 
-// Helper to convert a position into binary bits with padding
-std::vector<bool> BloomFilter::encodePosition(uint64_t position) const {
-    std::vector<bool> bits(positionBits, false); 
 
+// Helper to convert a position into binary bits with padding
+//std::vector<bool> BloomFilter::encodePosition(uint64_t position) const {
+//    std::vector<bool> bits(positionBits, false);
+//    for (size_t i = 0; i < positionBits; i++) {
+//        bits[i] = ((position >> i) & 1ULL) != 0;
+//    }
+//    return bits;
+//}
+std::vector<bool> BloomFilter::encodePosition(uint64_t position) const {
+    std::vector<bool> bits(positionBits, false);
     for (size_t i = 0; i < positionBits; i++) {
-        bits[positionBits - i - 1] = (position >> i) & 1ULL;  
+        bits[i] = ((position >> i) & 1ULL) != 0;
     }
+
+    // Debug print
+    std::cout << "Encoding position " << position << ": ";
+    for (bool b : bits) {
+        std::cout << b;
+    }
+    std::cout << std::endl;
 
     return bits;
 }
