@@ -102,17 +102,18 @@ uint64_t BloomFilter::getPosition(const std::string& item, int seed) const {
     }
 
     std::vector<bool> bits(positionBits, false);
-
+    //std::cout << "Reconstructing bits: ";
     for (size_t b = 0; b < chunkCount; b++) {
         for (int i = 0; i < numHashCount; i++) {
             size_t bitIndex = b * numHashCount + i;
             if (bitIndex >= positionBits) break;
-
-            if (positionBitsets[b][hashIndexes[i]]) {
-                bits[bitIndex] = true;
-            }
+            bits[bitIndex] = positionBitsets[b][hashIndexes[i]];
+            //std::cout << bits[bitIndex];
         }
     }
+    // debugging
+    //std::cout << std::endl;
+
     uint64_t reconstructed = 0ULL;
     for (size_t i = 0; i < bits.size(); i++) {
         if (bits[i]) {
@@ -157,6 +158,18 @@ bool BloomFilter::add(const std::string& item, uint64_t position, int seed) {
             }
         }
     }
+
+    // Debug statements - be aware of intra-element collisions which happen
+    //std::cout << "Setting position bits for " << item << ":\n";
+    //for (size_t b = 0; b < chunkCount; b++) {
+    //    for (int i = 0; i < numHashCount; i++) {
+    //        size_t bitIndex = b * numHashCount + i;
+    //        if (bitIndex >= newBits.size()) break;
+    //        std::cout << "chunk " << b << ", hash " << i << ": setting bit "
+    //            << newBits[bitIndex] << " at index " << hashIndexes[i] << std::endl;
+    //    }
+    //}
+
     for (auto hIndex : hashIndexes) {
         presenceBitset[hIndex] = true;
     }
@@ -173,25 +186,22 @@ bool BloomFilter::add(const std::string& item, uint64_t position, int seed) {
 
 
 // Helper to convert a position into binary bits with padding
-//std::vector<bool> BloomFilter::encodePosition(uint64_t position) const {
-//    std::vector<bool> bits(positionBits, false);
-//    for (size_t i = 0; i < positionBits; i++) {
-//        bits[i] = ((position >> i) & 1ULL) != 0;
-//    }
-//    return bits;
-//}
 std::vector<bool> BloomFilter::encodePosition(uint64_t position) const {
     std::vector<bool> bits(positionBits, false);
     for (size_t i = 0; i < positionBits; i++) {
         bits[i] = ((position >> i) & 1ULL) != 0;
     }
 
-    // Debug print
-    std::cout << "Encoding position " << position << ": ";
-    for (bool b : bits) {
-        std::cout << b;
-    }
-    std::cout << std::endl;
+    // debugging
+    //std::cout << "Encoding position " << position << ": ";
+    //for (bool b : bits) {
+    //    std::cout << b;
+    //}
+    //std::cout << std::endl;
 
     return bits;
+};
+
+std::size_t BloomFilter::getSize() const {
+    return bitArraySize;
 }
