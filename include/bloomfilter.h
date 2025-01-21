@@ -9,11 +9,6 @@ class BloomFilter;
 
 class BloomFilter {
 private:
-    // This is a bitset for presence encoding 
-    std::vector<bool> presenceBitset;
-
-    std::vector<std::vector<bool>> positionBitsets;
-
     std::size_t bitArraySize;
 
 
@@ -24,10 +19,14 @@ private:
 
 
 protected:
+    // This is a bitset for presence encoding 
+    std::vector<bool> presenceBitset;
+
+    std::vector<std::vector<bool>> positionBitsets;
     static uint64_t combine128to64(const uint8_t hash128[16]);
 public:
     int numHashCount;
-    uint64_t generateHash(const std::string& item, int i, int seed = 0) const;
+    virtual uint64_t generateHash(const std::string& item, int i, int seed = 0) const;
     BloomFilter(std::size_t elementsToEncode, double falsePositiveRate, int positionBits = 1);
     void addPresence(const std::string& item, int seed = 0);
     bool mightContain(const std::string& item, int seed = 0) const;
