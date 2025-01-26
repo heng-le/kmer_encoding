@@ -27,3 +27,4 @@ Makefile
 
 test_files/
 Testing/
+external/benchmark/

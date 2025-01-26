@@ -1,7 +1,6 @@
-﻿# 1) Add a library from the .cpp files that do not contain main()
-add_library(CapstoneLibrary STATIC
+﻿add_library(CapstoneLibrary STATIC
     bloomfilter.cpp
-    basicEncoding.cpp
+    "predeterminedEncoding.cpp"
 )
 
 target_link_libraries(CapstoneLibrary
@@ -9,24 +8,37 @@ target_link_libraries(CapstoneLibrary
         MurmurHash3
 )
 
-# 2) The main application target: includes the file with your main()
-add_executable(Capstone_v2
-    main.cpp
-)
-
-# 3) Link the main app with the library
-target_link_libraries(Capstone_v2
-    PRIVATE
-        CapstoneLibrary
-)
-
-# 4) Set the C++ standard if desired
-if(CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Capstone_v2 PROPERTY CXX_STANDARD 20)
-endif()
 
 
 target_include_directories(CapstoneLibrary
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
+)
+
+add_executable(Capstone_v2
+    main.cpp
+)
+
+target_link_libraries(Capstone_v2
+    PRIVATE
+        CapstoneLibrary
+)
+
+if(CMAKE_VERSION VERSION_GREATER 3.12)
+  set_property(TARGET Capstone_v2 PROPERTY CXX_STANDARD 20)
+endif()
+
+add_executable(CapstoneBenchmarks
+    benchmark_main.cpp
+)
+
+target_link_libraries(CapstoneBenchmarks
+    PRIVATE
+        CapstoneLibrary
+        benchmark::benchmark
+)
+
+target_include_directories(CapstoneBenchmarks
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/external/benchmark/include
 )

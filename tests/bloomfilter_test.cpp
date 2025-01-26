@@ -1,6 +1,7 @@
 #include <catch2/catch_all.hpp>
 #include "BloomFilter.h"
 #include "PartitionedBloomFilter.h"
+#include "predeterminedBloomFilter.h"
 #include <string>
 #include <vector>
 #include <iostream>
@@ -188,6 +189,7 @@ TEST_CASE("Position Tracking", "[bloom]") {
         REQUIRE_FALSE(bf.getPosition("GCTA", 0) == 200);
     }
 
+
     SECTION("Position bit boundary tests") {
         REQUIRE(bf.add("test1", 1023, 0));
         REQUIRE(bf.getPosition("test1", 0) == 1023);
@@ -210,11 +212,7 @@ TEST_CASE("Partitioned Position Tracking", "[par_bloom]") {
 
     SECTION("Position bit conflicts") {
         REQUIRE(bf.add(kmer, 42, 0));
-
-        // Adding same k-mer with same position should succeed
         REQUIRE(bf.add(kmer, 42, 0));
-
-        // Original position should remain unchanged
         REQUIRE(bf.getPosition(kmer, 0) == 42);
     }
 
@@ -223,7 +221,6 @@ TEST_CASE("Partitioned Position Tracking", "[par_bloom]") {
         REQUIRE(bf.add("GCTA", 200, 0));
 
         REQUIRE(bf.getPosition("ATCG", 0) == 100);
-        // intra-element collision occurs here
         REQUIRE(bf.getPosition("GCTA", 0) == 200);
     }
 
@@ -255,4 +252,30 @@ TEST_CASE("Edge Cases with Position Bits", "[bloom]") {
         REQUIRE(bf.add(largeString, 10, 0));
         REQUIRE(bf.getPosition(largeString, 0) == 10);
     }
+}
+
+
+
+// ------------------ Predetermined Bloom Filter ------------------ //
+TEST_CASE("Basic Testing", "[pre_bloom]") {
+    PredeterminedHashBloomFilter bf(1000, 0.01, 10, 6);
+    SECTION("Zero position handling") {
+        REQUIRE(bf.add("test", 0, 0));
+        REQUIRE(bf.getPosition("test", 0) == 0);
+    }
+
+    SECTION("Empty string with position") {
+        REQUIRE(bf.add("", 42, 0));
+        REQUIRE(bf.getPosition("", 0) == 42);
+    }
+
+    SECTION("Large string with position") {
+        std::string largeString(1000, 'a');
+        REQUIRE(bf.add(largeString, 10, 0));
+        REQUIRE(bf.getPosition(largeString, 0) == 10);
+    }
+
+    //SECTION("Calculation of bit array size") {
+    //    REQUIRE(bf.getSize() == )
+    //}
 }

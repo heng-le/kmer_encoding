@@ -9,21 +9,17 @@ class BloomFilter;
 
 class BloomFilter {
 private:
-    std::size_t bitArraySize;
-
-
     std::size_t positionBits;
-    std::size_t chunkCount;
     bool isSet(uint64_t index) const;
     std::vector<bool> encodePosition(uint64_t position) const;
 
-
 protected:
-    // This is a bitset for presence encoding 
     std::vector<bool> presenceBitset;
 
     std::vector<std::vector<bool>> positionBitsets;
     static uint64_t combine128to64(const uint8_t hash128[16]);
+    std::size_t bitArraySize; 
+    std::size_t chunkCount;
 public:
     int numHashCount;
     virtual uint64_t generateHash(const std::string& item, int i, int seed = 0) const;
@@ -34,7 +30,7 @@ public:
     uint64_t getPosition(const std::string& item, int seed = 0) const;
     std::pair<std::vector<uint64_t>, std::vector<int>> returnPartialCollisionIndex(
         const std::vector<uint64_t>& indexes) const;
-    std::size_t getSize() const;
+    virtual std::size_t getSize() const;
     const std::vector<bool>& getBitArray() const;
     static std::size_t calculateBitArraySize(std::size_t elementsToEncode, double falsePositiveRate);
     static int calculateOptimalHashNum(std::size_t elementsToEncode, std::size_t bitArraySize);
