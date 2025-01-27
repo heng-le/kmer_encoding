@@ -275,7 +275,7 @@ TEST_CASE("Basic Testing", "[pre_bloom]") {
         REQUIRE(bf.getPosition(largeString, 0) == 10);
     }
 
-    //SECTION("Calculation of bit array size") {
-    //    REQUIRE(bf.getSize() == )
-    //}
+    SECTION("Calculation of bit array size") {
+        REQUIRE(bf.getSize() == 10032);
+    }
 }

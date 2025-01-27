@@ -4,7 +4,9 @@
 #include <string>
 #include <stdexcept>
 #include "predeterminedBloomFilter.h" 
-#include "BloomFilter.h"                 
+#include "BloomFilter.h"     
+#include <bit>
+#include <cstdint>
 
 std::vector<std::string> readFileLines(const std::string& filepath) {
     std::vector<std::string> lines;
@@ -36,6 +38,13 @@ void writeFileLines(const std::string& filepath,
     outFile.close();
 }
 
+int numBits(uint64_t x) {
+    if (x == 0) return 1;
+    return 64 - std::countl_zero(x);
+}
+
+
+
 int main() {
     try {
         const std::string uniqueKmersPath = "D:/Research/Capstone/python_stuff/unique_37mers_1000.txt";
@@ -43,9 +52,9 @@ int main() {
         const std::size_t elementsToEncode = 1000;
         const double falsePositiveRate = 0.001;
 
-        const int numHash = 20;
+        const int numHash = numBits(elementsToEncode);
 
-        const int positionBits = 20;
+        const int positionBits = numBits(elementsToEncode);
 
         const int seed = 42;
 

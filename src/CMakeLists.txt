@@ -1,6 +1,5 @@
 ﻿add_library(CapstoneLibrary STATIC
     bloomfilter.cpp
-    "predeterminedEncoding.cpp"
 )
 
 target_link_libraries(CapstoneLibrary
@@ -9,14 +8,13 @@ target_link_libraries(CapstoneLibrary
 )
 
 
-
 target_include_directories(CapstoneLibrary
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
 )
 
 add_executable(Capstone_v2
-    main.cpp
+    predeterminedEncoding.cpp
 )
 
 target_link_libraries(Capstone_v2

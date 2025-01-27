@@ -11,9 +11,9 @@ private:
         int hashCount) const {
         double denominator = std::log(1.0 - std::pow(falsePositiveRate, 1.0 / hashCount));
         if (denominator == 0) {
-            throw std::invalid_argument("Invalid FPR or hashCount -> zero denom");
+            throw std::invalid_argument("Invalid FPR or hashCount -> zero denominator");
         }
-        return static_cast<std::size_t>(-((hashCount * elementsToEncode) / denominator));
+        return static_cast<std::size_t>(std::ceil(-((hashCount * elementsToEncode) / denominator)));
     }
 
 public:
