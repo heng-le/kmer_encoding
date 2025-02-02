@@ -17,6 +17,7 @@ add_subdirectory("tests")
 add_subdirectory("external/MurmurHash3")
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Google Benchmark tests" FORCE)
 add_subdirectory("external/benchmark")
+add_subdirectory("external/pthash")
 
 
 

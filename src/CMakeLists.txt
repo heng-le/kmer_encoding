@@ -4,6 +4,7 @@
 target_link_libraries(CapstoneLibrary
     PRIVATE
         MurmurHash3
+        PTHASH
 )
 
 
