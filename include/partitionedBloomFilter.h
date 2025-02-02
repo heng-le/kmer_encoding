@@ -59,7 +59,7 @@ public:
         std::size_t offset = hashValue % range;
 
         uint64_t partitionedIndex = start + offset;
-        std::cout << "Partitioned index: " << partitionedIndex << std::endl;
+        //std::cout << "Partitioned index: " << partitionedIndex << std::endl;
         return partitionedIndex;
     }
 

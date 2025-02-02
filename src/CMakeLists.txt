@@ -1,6 +1,5 @@
 ﻿add_library(CapstoneLibrary STATIC
-    bloomfilter.cpp
-)
+    bloomfilter.cpp)
 
 target_link_libraries(CapstoneLibrary
     PRIVATE
@@ -14,8 +13,8 @@ target_include_directories(CapstoneLibrary
 )
 
 add_executable(Capstone_v2
-    predeterminedEncoding.cpp
-)
+main.cpp 
+ )
 
 target_link_libraries(Capstone_v2
     PRIVATE
@@ -26,17 +25,4 @@ if(CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Capstone_v2 PROPERTY CXX_STANDARD 20)
 endif()
 
-add_executable(CapstoneBenchmarks
-    benchmark_main.cpp
-)
 
-target_link_libraries(CapstoneBenchmarks
-    PRIVATE
-        CapstoneLibrary
-        benchmark::benchmark
-)
-
-target_include_directories(CapstoneBenchmarks
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/external/benchmark/include
-)

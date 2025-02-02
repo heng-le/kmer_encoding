@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-#include "predeterminedBloomFilter.h" 
+#include "partitionedBloomFilter.h" 
 #include "BloomFilter.h"     
 #include <bit>
 #include <cstdint>
@@ -58,7 +58,7 @@ int main() {
 
         const int seed = 42;
 
-        std::vector<PredeterminedHashBloomFilter> bloomFilters;
+        std::vector<PartitionedBloomFilter> bloomFilters;
         bloomFilters.emplace_back(
             elementsToEncode,
             falsePositiveRate,
@@ -96,7 +96,7 @@ int main() {
             std::string line;
             while (std::getline(inFile, line)) {
                 if (line.empty()) {
-                    continue; 
+                    continue;
                 }
 
                 bool inserted = false;
@@ -118,7 +118,7 @@ int main() {
             inFile.close();
             collisionFile.close();
 
-        
+
             if (collisionsExist) {
                 currentRoundFile = collisionFilePath;
                 bloomFilters.emplace_back(
