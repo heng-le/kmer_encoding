@@ -8,16 +8,16 @@ endif()
 
 project ("Capstone_v2")
 
-
+message(STATUS "PTHASH includes: ${CMAKE_SOURCE_DIR}/external/pthash/include")
 enable_testing()
 
 # Include sub-projects.
-add_subdirectory("src")
 add_subdirectory("tests")
 add_subdirectory("external/MurmurHash3")
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Google Benchmark tests" FORCE)
 add_subdirectory("external/benchmark")
 add_subdirectory("external/pthash")
+add_subdirectory("src")
 
 
 

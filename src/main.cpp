@@ -1,22 +1,44 @@
-﻿#include "../external/MurmurHash3/murmurhash3.h"
-#include <iostream>
-#include <string>
-#include <cstdint>
+﻿#include <iostream>
+#include "pthash.hpp"
+#include "util.hpp"
 
 int main() {
-    const char* key = "Hello, MurmurHash3!";
-    uint32_t seed = 42;  
+    using namespace pthash;
 
+    std::vector<std::string> keys = {
+        "apple", "banana", "cherry", "date", "elderberry",
+        "fig", "grape", "honeydew", "kiwi", "lemon"
+    };
 
-    // Example: 128-bit MurmurHash3
-    uint8_t hash128[16];  
-    MurmurHash3_x64_128(key, static_cast<int>(strlen(key)), seed, hash128);
+    build_configuration config;
+    config.seed = 42;
+    config.lambda = 3;        
+    config.alpha = 0.94;      
+    config.verbose = true;   
 
-    std::cout << "128-bit MurmurHash3: ";
-    for (int i = 0; i < 16; i++) {
-        printf("%02x", hash128[i]);
+    typedef single_phf<
+        xxhash128,                   
+        skew_bucketer,               
+        compact_compact,             
+        true,                        
+        pthash_search_type::add_displacement  
+    > pthash_type;
+
+    pthash_type f;
+
+    std::cout << "Building perfect hash function..." << std::endl;
+    f.build_in_internal_memory(keys.begin(), keys.size(), config);
+
+    std::cout << "Built PHF with "
+        << f.num_bits() << " total bits ("
+        << static_cast<double>(f.num_bits()) / f.num_keys()
+        << " bits/key)" << std::endl;
+
+    std::cout << "\nHash values:" << std::endl;
+    for (const auto& key : keys) {
+        auto hash = f(key);
+        std::cout << key << " => " << hash << std::endl;
     }
-    std::cout << std::endl;
 
     return 0;
 }

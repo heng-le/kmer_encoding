@@ -1,4 +1,4 @@
-#include "BloomFilter.h"
+#include "bloomfilter.h"
 #include "../external/MurmurHash3/murmurhash3.h"
 #include <cmath>
 #include <cstring>
