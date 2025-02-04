@@ -24,5 +24,4 @@ target_include_directories(UnitTests
         ${CMAKE_SOURCE_DIR}/include
 )
 
-# Move this to the end
 catch_discover_tests(UnitTests)

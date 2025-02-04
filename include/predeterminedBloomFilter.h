@@ -1,6 +1,7 @@
 #pragma once
-#include "PartitionedBloomFilter.h"
+#include "partitionedBloomFilter.h"
 #include "bloomfilter.h"
+#include <cmath>
 
 class PredeterminedHashBloomFilter : public PartitionedBloomFilter {
 private:

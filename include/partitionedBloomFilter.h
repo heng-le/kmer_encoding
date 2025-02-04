@@ -24,7 +24,7 @@ public:
         if (numHashCount == 0) {
             throw std::invalid_argument("[PartitionedBF] Number of hash functions cannot be zero");
         }
-        if (getSize() < numHashCount) {
+        if (getSize() < static_cast<std::size_t>(numHashCount)) {
             throw std::invalid_argument("[PartitionedBF] Not enough bits for the requested partitions.");
         }
 

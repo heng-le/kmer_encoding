@@ -47,7 +47,7 @@ int numBits(uint64_t x) {
 
 int main() {
     try {
-        const std::string uniqueKmersPath = "D:/Research/Capstone/python_stuff/unique_37mers_1000.txt";
+        const std::string uniqueKmersPath = "/mnt/d/Research/Capstone_v2/test_files/unique_37mers_1000.txt";
 
         const std::size_t elementsToEncode = 1000;
         const double falsePositiveRate = 0.001;
@@ -80,7 +80,7 @@ int main() {
                 << " (Elements left: " << totalElementsLeft << ") ---\n";
 
             const std::string collisionFilePath =
-                "D:/Research/Capstone/capstone_code2/test_output/collisions_round_"
+                "/mnt/d/Research/Capstone_v2/output_files/collisions_round_"
                 + std::to_string(round) + ".txt";
 
             std::ifstream inFile(currentRoundFile);

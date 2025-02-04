@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
-#include "BloomFilter.h"
-#include "PartitionedBloomFilter.h"
+#include "bloomfilter.h"
+#include "partitionedBloomFilter.h"
 #include "predeterminedBloomFilter.h"
 #include <string>
 #include <vector>

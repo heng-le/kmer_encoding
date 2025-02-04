@@ -10,6 +10,7 @@ project ("Capstone_v2")
 
 message(STATUS "PTHASH includes: ${CMAKE_SOURCE_DIR}/external/pthash/include")
 enable_testing()
+set(CMAKE_BUILD_TYPE Release)
 
 # Include sub-projects.
 add_subdirectory("tests")
